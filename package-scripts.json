@@ -1,0 +1,7 @@
+{
+  "scripts": {
+    "seed:categories": "node src/scripts/seedCategories.js",
+    "seed:products": "node src/scripts/seedProducts.js",
+    "seed:all": "npm run seed:categories && npm run seed:products"
+  }
+}
