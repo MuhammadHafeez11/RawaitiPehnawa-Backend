@@ -3,6 +3,7 @@ import cors from 'cors';
 import helmet from 'helmet';
 import cookieParser from 'cookie-parser';
 import dotenv from 'dotenv';
+import connectDB from '../src/config/database.js';
 
 // Load environment variables first
 dotenv.config();
@@ -23,7 +24,7 @@ const app = express();
 // CORS configuration
 const allowedOrigins = process.env.CORS_ORIGINS 
   ? process.env.CORS_ORIGINS.split(',')
-  : ['http://localhost:3000', 'http://localhost:3001', 'https://rawaiti-pehnawa-frontend-gqn2-b8g9zvuzq.vercel.app'];
+  : ['http://localhost:3000', 'http://localhost:3001', 'https://rawaiti-pehnawa-frontend.vercel.app'];
 
 app.use(cors({
   origin: allowedOrigins,
@@ -39,6 +40,26 @@ app.use(helmet({
 app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ extended: true, limit: '10mb' }));
 app.use(cookieParser());
+
+// Connect to MongoDB
+let isConnected = false;
+const connectToDatabase = async () => {
+  if (!isConnected) {
+    try {
+      await connectDB();
+      isConnected = true;
+      console.log('Database connected successfully');
+    } catch (error) {
+      console.error('Database connection failed:', error);
+    }
+  }
+};
+
+// Connect to database before handling requests
+app.use(async (req, res, next) => {
+  await connectToDatabase();
+  next();
+});
 
 // Routes
 app.use('/api/auth', authRoutes);
