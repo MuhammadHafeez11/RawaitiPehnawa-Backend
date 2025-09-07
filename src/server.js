@@ -6,7 +6,7 @@ import rateLimit from 'express-rate-limit';
 import dotenv from 'dotenv';
 import connectDB from './config/database.js';
 import errorHandler from './middleware/errorHandler.js';
-import { corsMiddleware } from './middleware/cors.js';
+// Removed custom CORS middleware
 
 // Load environment variables first
 dotenv.config();
@@ -55,8 +55,13 @@ const limiter = rateLimit({
   legacyHeaders: false
 });
 
-// CORS first
-app.use(corsMiddleware);
+// Simple CORS - allow all origins
+app.use(cors({
+  origin: '*',
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS', 'PATCH'],
+  allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With'],
+  credentials: false
+}));
 
 // Simplified security
 app.use(helmet({
