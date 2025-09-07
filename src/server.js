@@ -94,6 +94,22 @@ app.use('/api/guest-orders', guestOrderRoutes);
 app.use('/api/admin', adminRoutes);
 app.use('/api/upload', uploadRoutes);
 
+// Root route for serverless
+app.get('/', (req, res) => {
+  res.json({ 
+    message: 'Rawayti Pehnawa Backend API', 
+    status: 'OK', 
+    timestamp: new Date().toISOString(),
+    routes: [
+      '/api/health',
+      '/api/products',
+      '/api/categories',
+      '/api/auth',
+      '/api/admin'
+    ]
+  });
+});
+
 // Health check
 app.get('/api/health', (req, res) => {
   res.json({ status: 'OK', timestamp: new Date().toISOString() });
