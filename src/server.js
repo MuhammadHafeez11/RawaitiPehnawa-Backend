@@ -38,8 +38,13 @@ import uploadRoutes from './routes/upload.js';
 const app = express();
 const PORT = process.env.PORT || 5000;
 
-// Connect to MongoDB
-connectDB();
+// Connect to MongoDB (serverless-friendly)
+if (process.env.NODE_ENV === 'production') {
+  // In serverless, connection should be handled per request
+  connectDB().catch(console.error);
+} else {
+  connectDB();
+}
 
 // Rate limiting - production optimized
 const limiter = rateLimit({
@@ -108,12 +113,12 @@ app.use('*', (req, res) => {
   res.status(404).json({ message: 'Route not found' });
 });
 
-app.listen(PORT, () => {
-  console.log(`🌟 Rawayti Pehnawa Server running on port ${PORT}`);
-  console.log(`📱 Environment: ${process.env.NODE_ENV || 'development'}`);
-  if (process.env.NODE_ENV === 'production') {
-    console.log('✅ Production optimizations enabled');
-  }
-});
+// Don't use app.listen() in serverless functions
+if (process.env.NODE_ENV !== 'production') {
+  app.listen(PORT, () => {
+    console.log(`🌟 Rawayti Pehnawa Server running on port ${PORT}`);
+    console.log(`📱 Environment: ${process.env.NODE_ENV || 'development'}`);
+  });
+}
 
 export default app;
