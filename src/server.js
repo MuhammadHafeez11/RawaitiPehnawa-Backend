@@ -46,33 +46,27 @@ if (process.env.NODE_ENV === 'production') {
   connectDB();
 }
 
-// Rate limiting - production optimized
+// Simplified rate limiting for serverless
 const limiter = rateLimit({
-  windowMs: process.env.NODE_ENV === 'production' ? 15 * 60 * 1000 : 1 * 60 * 1000, // 15 min in prod, 1 min in dev
-  max: process.env.NODE_ENV === 'production' ? 100 : 1000, // 100 requests per 15min in prod, 1000 per min in dev
-  message: {
-    error: 'Too many requests from this IP, please try again later.',
-    retryAfter: process.env.NODE_ENV === 'production' ? 900 : 60
-  },
+  windowMs: 15 * 60 * 1000, // 15 minutes
+  max: 100, // 100 requests per 15 minutes
+  message: 'Too many requests, please try again later.',
   standardHeaders: true,
-  legacyHeaders: false,
-  skip: (req) => {
-    // Skip rate limiting for health checks
-    return req.path === '/api/health';
-  }
+  legacyHeaders: false
 });
 
-// Custom CORS middleware first
+// CORS first
 app.use(corsMiddleware);
 
-// Security middleware
+// Simplified security
 app.use(helmet({
-  crossOriginResourcePolicy: { policy: "cross-origin" },
-  contentSecurityPolicy: process.env.NODE_ENV === 'production' ? undefined : false
+  crossOriginResourcePolicy: { policy: "cross-origin" }
 }));
 
-// Apply rate limiting
-app.use(limiter);
+// Rate limiting only in development
+if (process.env.NODE_ENV !== 'production') {
+  app.use(limiter);
+}
 
 // Body parsing middleware with size limits
 app.use(express.json({ 
