@@ -6,13 +6,18 @@ export const corsMiddleware = (req, res, next) => {
         'http://localhost:3000',
         'http://localhost:3001',
         'http://127.0.0.1:3000',
-        'http://127.0.0.1:3001'
+        'http://127.0.0.1:3001',
+        'https://rawaiti-pehnawa-frontend.vercel.app',
+        'https://ecommerce-frontend-psi-six.vercel.app'
       ];
   
   const origin = req.headers.origin;
   
   if (allowedOrigins.includes(origin)) {
     res.setHeader('Access-Control-Allow-Origin', origin);
+  } else if (process.env.NODE_ENV === 'production') {
+    // Allow all Vercel frontend URLs in production
+    res.setHeader('Access-Control-Allow-Origin', '*');
   }
   
   res.setHeader('Access-Control-Allow-Credentials', 'true');
