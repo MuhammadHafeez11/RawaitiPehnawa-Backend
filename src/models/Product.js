@@ -3,7 +3,7 @@ import mongoose from 'mongoose';
 const variantSchema = new mongoose.Schema({
   size: {
     type: String,
-    enum: ['XS', 'S', 'M', 'L', 'XL', 'XXL', '2T', '3T', '4T', '5T', '6', '7', '8', '10', '12', '14', '16']
+    enum: ['XS', 'S', 'M', 'L', 'XL', 'XXL', '0-6M', '6-12M', '1-2Y', '2-3Y', '3-4Y', '4-5Y', '5-6Y', '6-7Y', '7-8Y', '8-9Y', '9-10Y']
   },
   stock: {
     type: Number,
@@ -43,7 +43,35 @@ const productSchema = new mongoose.Schema({
   category: {
     type: mongoose.Schema.Types.ObjectId,
     ref: 'Category',
-    required: [true, 'Product category is required']
+    required: true
+  },
+  categories: [{
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'CategoryNew'
+  }],
+  collections: [{
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'Collection'
+  }],
+  stitchType: {
+    type: String,
+    enum: ['stitched', 'unstitched'],
+    required: true
+  },
+  pieceCount: {
+    type: Number,
+    enum: [1, 2, 3],
+    required: true
+  },
+  targetGender: {
+    type: String,
+    enum: ['women', 'men', 'boys', 'girls'],
+    required: true
+  },
+  season: {
+    type: String,
+    enum: ['winter', 'summer', 'all-season'],
+    default: 'all-season'
   },
   brand: {
     type: String,
@@ -203,6 +231,12 @@ productSchema.virtual('currentStock').get(function() {
 // Index for search and filtering
 productSchema.index({ name: 'text', description: 'text', tags: 'text' });
 productSchema.index({ category: 1, isActive: 1 });
+productSchema.index({ categories: 1, isActive: 1 });
+productSchema.index({ collections: 1 });
+productSchema.index({ stitchType: 1 });
+productSchema.index({ pieceCount: 1 });
+productSchema.index({ targetGender: 1 });
+productSchema.index({ season: 1 });
 productSchema.index({ price: 1 });
 productSchema.index({ createdAt: -1 });
 productSchema.index({ 'rating.average': -1 });

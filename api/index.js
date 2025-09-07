@@ -18,6 +18,8 @@ import orderRoutes from '../src/routes/orders.js';
 import guestOrderRoutes from '../src/routes/guestOrders.js';
 import adminRoutes from '../src/routes/admin.js';
 import uploadRoutes from '../src/routes/upload.js';
+import collectionsRoutes from '../src/routes/collections.js';
+import categoriesNewRoutes from '../src/routes/categoriesNew.js';
 
 const app = express();
 
@@ -55,6 +57,33 @@ const connectToDatabase = async () => {
   }
 };
 
+// Simple collections route
+app.get('/api/collections', (req, res) => {
+  res.json({
+    success: true,
+    data: {
+      collections: [
+        { _id: '1', name: 'Winter Collection', slug: 'winter-collection', description: 'Warm clothing', isActive: true, productCount: 0 },
+        { _id: '2', name: 'Summer Collection', slug: 'summer-collection', description: 'Light clothing', isActive: true, productCount: 0 },
+        { _id: '3', name: 'New Arrivals', slug: 'new-arrivals', description: 'Latest trends', isActive: true, productCount: 0 }
+      ]
+    }
+  });
+});
+
+// Simple categories-new route
+app.get('/api/categories-new', (req, res) => {
+  res.json({
+    success: true,
+    data: {
+      categories: [
+        { _id: '1', name: 'Women Collection', slug: 'women', description: 'Women clothing', isActive: true, productCount: 0 },
+        { _id: '2', name: 'Kids Collection', slug: 'kids', description: 'Kids clothing', isActive: true, productCount: 0 }
+      ]
+    }
+  });
+});
+
 // Connect to database before handling requests
 app.use(async (req, res, next) => {
   await connectToDatabase();
@@ -90,9 +119,16 @@ app.get('/', (req, res) => {
   });
 });
 
-// 404 handler
-app.use('*', (req, res) => {
-  res.status(404).json({ message: 'Route not found' });
+// Debug middleware to log all requests
+app.use('*', (req, res, next) => {
+  console.log(`${req.method} ${req.originalUrl}`);
+  console.log('Headers:', req.headers);
+  res.status(404).json({ 
+    message: 'Route not found',
+    method: req.method,
+    url: req.originalUrl,
+    timestamp: new Date().toISOString()
+  });
 });
 
 export default app;

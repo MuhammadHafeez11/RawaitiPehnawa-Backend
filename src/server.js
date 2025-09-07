@@ -11,12 +11,18 @@ import { corsMiddleware } from './middleware/cors.js';
 // Load environment variables first
 dotenv.config();
 
-// Debug: Check if Cloudinary env vars are loaded
-console.log('Environment Variables Check:', {
-  CLOUDINARY_CLOUD_NAME: process.env.CLOUDINARY_CLOUD_NAME || 'MISSING',
-  CLOUDINARY_API_KEY: process.env.CLOUDINARY_API_KEY || 'MISSING',
-  CLOUDINARY_API_SECRET: process.env.CLOUDINARY_API_SECRET ? 'SET' : 'MISSING'
-});
+// Production environment check
+if (process.env.NODE_ENV === 'production') {
+  console.log('🚀 Starting in production mode');
+} else {
+  console.log('🔧 Starting in development mode');
+  // Debug: Check if Cloudinary env vars are loaded in development
+  console.log('Environment Variables Check:', {
+    CLOUDINARY_CLOUD_NAME: process.env.CLOUDINARY_CLOUD_NAME || 'MISSING',
+    CLOUDINARY_API_KEY: process.env.CLOUDINARY_API_KEY || 'MISSING',
+    CLOUDINARY_API_SECRET: process.env.CLOUDINARY_API_SECRET ? 'SET' : 'MISSING'
+  });
+}
 
 // Routes
 import authRoutes from './routes/auth.js';
@@ -35,31 +41,48 @@ const PORT = process.env.PORT || 5000;
 // Connect to MongoDB
 connectDB();
 
-// Rate limiting - relaxed for development
+// Rate limiting - production optimized
 const limiter = rateLimit({
-  windowMs: 1 * 60 * 1000, // 1 minute
-  max: 1000, // 1000 requests per minute
-  message: 'Too many requests from this IP, please try again later.',
+  windowMs: process.env.NODE_ENV === 'production' ? 15 * 60 * 1000 : 1 * 60 * 1000, // 15 min in prod, 1 min in dev
+  max: process.env.NODE_ENV === 'production' ? 100 : 1000, // 100 requests per 15min in prod, 1000 per min in dev
+  message: {
+    error: 'Too many requests from this IP, please try again later.',
+    retryAfter: process.env.NODE_ENV === 'production' ? 900 : 60
+  },
+  standardHeaders: true,
+  legacyHeaders: false,
   skip: (req) => {
-    // Skip rate limiting for development
-    return process.env.NODE_ENV === 'development';
+    // Skip rate limiting for health checks
+    return req.path === '/api/health';
   }
 });
 
 // Custom CORS middleware first
 app.use(corsMiddleware);
 
-// Other middleware
+// Security middleware
 app.use(helmet({
-  crossOriginResourcePolicy: { policy: "cross-origin" }
+  crossOriginResourcePolicy: { policy: "cross-origin" },
+  contentSecurityPolicy: process.env.NODE_ENV === 'production' ? undefined : false
 }));
-// Skip rate limiting in development
-if (process.env.NODE_ENV !== 'development') {
-  app.use(limiter);
-}
-app.use(express.json({ limit: '10mb' }));
-app.use(express.urlencoded({ extended: true, limit: '10mb' }));
+
+// Apply rate limiting
+app.use(limiter);
+
+// Body parsing middleware with size limits
+app.use(express.json({ 
+  limit: process.env.NODE_ENV === 'production' ? '5mb' : '10mb'
+}));
+app.use(express.urlencoded({ 
+  extended: true, 
+  limit: process.env.NODE_ENV === 'production' ? '5mb' : '10mb'
+}));
 app.use(cookieParser());
+
+// Trust proxy for production (Vercel)
+if (process.env.NODE_ENV === 'production') {
+  app.set('trust proxy', 1);
+}
 
 // Routes
 app.use('/api/auth', authRoutes);
@@ -86,7 +109,11 @@ app.use('*', (req, res) => {
 });
 
 app.listen(PORT, () => {
-  console.log(`Server running on port ${PORT}`);
+  console.log(`🌟 Rawayti Pehnawa Server running on port ${PORT}`);
+  console.log(`📱 Environment: ${process.env.NODE_ENV || 'development'}`);
+  if (process.env.NODE_ENV === 'production') {
+    console.log('✅ Production optimizations enabled');
+  }
 });
 
 export default app;

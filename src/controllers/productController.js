@@ -1,5 +1,6 @@
 import Product from '../models/Product.js';
-import Category from '../models/Category.js';
+import CategoryNew from '../models/CategoryNew.js';
+import Collection from '../models/Collection.js';
 
 /**
  * Get all products with filtering and pagination
@@ -7,13 +8,29 @@ import Category from '../models/Category.js';
  */
 export const getProducts = async (req, res, next) => {
   try {
-    const { page = 1, limit = 12, category, search, minPrice, maxPrice, sort = '-createdAt' } = req.query;
+    const { page = 1, limit = 12, category, search, targetGender, stitchType, pieceCount, season, minPrice, maxPrice, sort = '-createdAt' } = req.query;
     
     // Build filter object
     const filter = { isActive: true };
     
     if (category) {
       filter.category = category;
+    }
+    
+    if (targetGender) {
+      filter.targetGender = targetGender;
+    }
+    
+    if (stitchType) {
+      filter.stitchType = stitchType;
+    }
+    
+    if (pieceCount) {
+      filter.pieceCount = Number(pieceCount);
+    }
+    
+    if (season) {
+      filter.season = season;
     }
     
     if (search) {
@@ -29,6 +46,7 @@ export const getProducts = async (req, res, next) => {
     // Execute query with pagination
     const products = await Product.find(filter)
       .populate('category', 'name slug')
+      .populate('collections', 'name slug')
       .sort(sort)
       .limit(limit * 1)
       .skip((page - 1) * limit)
@@ -73,12 +91,16 @@ export const getProduct = async (req, res, next) => {
     
     // Check if it's a valid ObjectId (24 character hex string)
     if (id.match(/^[0-9a-fA-F]{24}$/)) {
-      product = await Product.findById(id).populate('category', 'name slug');
+      product = await Product.findById(id)
+        .populate('category', 'name slug')
+        .populate('collections', 'name slug');
     }
     
     // If not found by ID or not a valid ObjectId, try by slug
     if (!product) {
-      product = await Product.findOne({ slug: id, isActive: true }).populate('category', 'name slug');
+      product = await Product.findOne({ slug: id, isActive: true })
+        .populate('category', 'name slug')
+        .populate('collections', 'name slug');
     }
     
     if (!product) {
@@ -106,17 +128,9 @@ export const createProduct = async (req, res, next) => {
   try {
     const productData = req.body;
     
-    // Verify category exists
-    const category = await Category.findById(productData.category);
-    if (!category) {
-      return res.status(400).json({
-        success: false,
-        message: 'Category not found'
-      });
-    }
-
     const product = await Product.create(productData);
     await product.populate('category', 'name slug');
+    await product.populate('collections', 'name slug');
 
     res.status(201).json({
       success: true,
@@ -137,22 +151,12 @@ export const updateProduct = async (req, res, next) => {
     const { id } = req.params;
     const updateData = req.body;
 
-    // Verify category exists if being updated
-    if (updateData.category) {
-      const category = await Category.findById(updateData.category);
-      if (!category) {
-        return res.status(400).json({
-          success: false,
-          message: 'Category not found'
-        });
-      }
-    }
-
     const product = await Product.findByIdAndUpdate(
       id,
       updateData,
       { new: true, runValidators: true }
-    ).populate('category', 'name slug');
+    ).populate('category', 'name slug')
+     .populate('collections', 'name slug');
 
     if (!product) {
       return res.status(404).json({
@@ -210,6 +214,7 @@ export const getFeaturedProducts = async (req, res, next) => {
       isFeatured: true 
     })
       .populate('category', 'name slug')
+      .populate('collections', 'name slug')
       .sort('-createdAt')
       .limit(Number(limit))
       .lean();
