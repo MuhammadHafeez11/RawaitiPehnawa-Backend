@@ -142,6 +142,82 @@ app.get('/api/products', (req, res) => {
   });
 });
 
+// Cart API
+app.get('/api/cart', (req, res) => {
+  res.json({
+    success: true,
+    data: {
+      cart: {
+        _id: 'cart1',
+        items: [],
+        totalItems: 0,
+        totalAmount: 0,
+        count: 0
+      }
+    }
+  });
+});
+
+app.post('/api/cart/items', (req, res) => {
+  res.json({
+    success: true,
+    data: {
+      cart: {
+        _id: 'cart1',
+        items: [],
+        totalItems: 0,
+        totalAmount: 0,
+        count: 0
+      }
+    }
+  });
+});
+
+app.put('/api/cart/items/:id', (req, res) => {
+  res.json({
+    success: true,
+    data: {
+      cart: {
+        _id: 'cart1',
+        items: [],
+        totalItems: 0,
+        totalAmount: 0,
+        count: 0
+      }
+    }
+  });
+});
+
+app.delete('/api/cart/items/:id', (req, res) => {
+  res.json({
+    success: true,
+    data: {
+      cart: {
+        _id: 'cart1',
+        items: [],
+        totalItems: 0,
+        totalAmount: 0,
+        count: 0
+      }
+    }
+  });
+});
+
+app.delete('/api/cart', (req, res) => {
+  res.json({
+    success: true,
+    data: {
+      cart: {
+        _id: 'cart1',
+        items: [],
+        totalItems: 0,
+        totalAmount: 0,
+        count: 0
+      }
+    }
+  });
+});
+
 // Catch all other routes
 app.use('*', (req, res) => {
   res.status(404).json({ 
