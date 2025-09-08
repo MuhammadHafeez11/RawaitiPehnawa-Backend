@@ -142,10 +142,6 @@ if (process.env.NODE_ENV !== 'production') {
   });
 }
 
-// Export for Vercel serverless
-export default (req, res) => {
-  return app(req, res);
-};
-
-// Also export app for local development
+// Export app for Vercel serverless
 export { app };
+export default app;

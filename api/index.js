@@ -1,2 +1,4 @@
-// Professional Vercel serverless entry point
-import '../src/server.js';
+// Vercel serverless entry point
+import { app } from '../src/server.js';
+
+export default app;
