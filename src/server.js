@@ -55,12 +55,18 @@ const limiter = rateLimit({
   legacyHeaders: false
 });
 
-// Simple CORS - allow all origins
+// Professional CORS configuration
 app.use(cors({
-  origin: '*',
+  origin: [
+    'https://rawaiti-pehnawa-frontend.vercel.app',
+    'https://ecommerce-frontend-psi-six.vercel.app',
+    'http://localhost:3000',
+    'http://localhost:3001'
+  ],
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS', 'PATCH'],
-  allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With'],
-  credentials: false
+  allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With', 'Accept'],
+  credentials: true,
+  optionsSuccessStatus: 200
 }));
 
 // Simplified security
@@ -136,4 +142,10 @@ if (process.env.NODE_ENV !== 'production') {
   });
 }
 
-export default app;
+// Export for Vercel serverless
+export default (req, res) => {
+  return app(req, res);
+};
+
+// Also export app for local development
+export { app };
