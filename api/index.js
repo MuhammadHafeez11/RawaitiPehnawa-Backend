@@ -1,4 +1,145 @@
-// Vercel serverless entry point
-import { app } from '../src/server.js';
+const express = require('express');
+const cors = require('cors');
 
-export default app;
+const app = express();
+
+// CORS - allow your frontend
+app.use(cors({
+  origin: [
+    'https://rawaiti-pehnawa-frontend.vercel.app',
+    'http://localhost:3000'
+  ],
+  credentials: true
+}));
+
+app.use(express.json());
+
+// Root route
+app.get('/', (req, res) => {
+  res.json({ 
+    message: 'Rawayti Pehnawa Backend API - WORKING', 
+    status: 'OK', 
+    timestamp: new Date().toISOString(),
+    version: '2.0'
+  });
+});
+
+// Health check
+app.get('/api/health', (req, res) => {
+  res.json({ 
+    status: 'OK', 
+    timestamp: new Date().toISOString(),
+    message: 'Backend is working perfectly!'
+  });
+});
+
+// Categories API
+app.get('/api/categories', (req, res) => {
+  res.json({
+    success: true,
+    data: {
+      categories: [
+        { 
+          _id: '1', 
+          name: 'Men', 
+          slug: 'men',
+          image: 'https://images.unsplash.com/photo-1516257984-b1b4d707412e?w=300',
+          description: 'Men\'s Fashion Collection'
+        },
+        { 
+          _id: '2', 
+          name: 'Women', 
+          slug: 'women',
+          image: 'https://images.unsplash.com/photo-1483985988355-763728e1935b?w=300',
+          description: 'Women\'s Fashion Collection'
+        },
+        { 
+          _id: '3', 
+          name: 'Kids', 
+          slug: 'kids',
+          image: 'https://images.unsplash.com/photo-1503944583220-79d8926ad5e2?w=300',
+          description: 'Kids Fashion Collection'
+        }
+      ]
+    }
+  });
+});
+
+// Featured Products API
+app.get('/api/products/featured', (req, res) => {
+  res.json({
+    success: true,
+    data: {
+      products: [
+        { 
+          _id: '1', 
+          name: 'Premium Cotton Shirt', 
+          price: 2500,
+          originalPrice: 3000,
+          image: 'https://images.unsplash.com/photo-1521572163474-6864f9cf17ab?w=400',
+          category: 'Men',
+          featured: true,
+          inStock: true
+        },
+        { 
+          _id: '2', 
+          name: 'Designer Kurti', 
+          price: 1800,
+          originalPrice: 2200,
+          image: 'https://images.unsplash.com/photo-1594633312681-425c7b97ccd1?w=400',
+          category: 'Women',
+          featured: true,
+          inStock: true
+        },
+        { 
+          _id: '3', 
+          name: 'Casual Jeans', 
+          price: 2200,
+          originalPrice: 2800,
+          image: 'https://images.unsplash.com/photo-1542272604-787c3835535d?w=400',
+          category: 'Men',
+          featured: true,
+          inStock: true
+        }
+      ]
+    }
+  });
+});
+
+// All Products API
+app.get('/api/products', (req, res) => {
+  res.json({
+    success: true,
+    data: {
+      products: [
+        { _id: '1', name: 'Premium Cotton Shirt', price: 2500, image: 'https://images.unsplash.com/photo-1521572163474-6864f9cf17ab?w=400' },
+        { _id: '2', name: 'Designer Kurti', price: 1800, image: 'https://images.unsplash.com/photo-1594633312681-425c7b97ccd1?w=400' },
+        { _id: '3', name: 'Casual Jeans', price: 2200, image: 'https://images.unsplash.com/photo-1542272604-787c3835535d?w=400' },
+        { _id: '4', name: 'Kids T-Shirt', price: 800, image: 'https://images.unsplash.com/photo-1503944583220-79d8926ad5e2?w=400' }
+      ],
+      pagination: { 
+        page: 1, 
+        totalPages: 1, 
+        total: 4,
+        limit: 10
+      }
+    }
+  });
+});
+
+// Catch all other routes
+app.use('*', (req, res) => {
+  res.status(404).json({ 
+    success: false,
+    message: 'Route not found',
+    availableRoutes: [
+      '/',
+      '/api/health',
+      '/api/categories',
+      '/api/products/featured',
+      '/api/products'
+    ]
+  });
+});
+
+module.exports = app;
