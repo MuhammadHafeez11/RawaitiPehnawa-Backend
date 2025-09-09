@@ -1,36 +1,9 @@
-// Vercel serverless entry point - CommonJS
 const express = require('express');
 const cors = require('cors');
-const mongoose = require('mongoose');
-require('dotenv').config();
 
 const app = express();
 
-// MongoDB connection for serverless
-let cachedConnection = null;
-
-async function connectToDatabase() {
-  if (cachedConnection) {
-    return cachedConnection;
-  }
-  
-  try {
-    const connection = await mongoose.connect(process.env.MONGO_URI, {
-      useNewUrlParser: true,
-      useUnifiedTopology: true,
-      serverSelectionTimeoutMS: 5000,
-      maxPoolSize: 10
-    });
-    cachedConnection = connection;
-    console.log('✅ MongoDB connected for serverless');
-    return connection;
-  } catch (error) {
-    console.error('❌ MongoDB connection error:', error);
-    throw error;
-  }
-}
-
-// CORS configuration
+// Simple CORS
 app.use(cors({
   origin: [
     'https://rawaiti-pehnawa-frontend.vercel.app',
@@ -41,49 +14,9 @@ app.use(cors({
   credentials: true
 }));
 
-app.use(express.json({ limit: '10mb' }));
-app.use(express.urlencoded({ extended: true, limit: '10mb' }));
+app.use(express.json());
 
-// Simple Category Schema
-const categorySchema = new mongoose.Schema({
-  name: String,
-  slug: String,
-  description: String,
-  image: String,
-  isActive: { type: Boolean, default: true },
-  parentCategory: { type: mongoose.Schema.Types.ObjectId, ref: 'Category', default: null }
-}, { timestamps: true });
-
-const Category = mongoose.models.Category || mongoose.model('Category', categorySchema);
-
-// Simple Product Schema
-const productSchema = new mongoose.Schema({
-  name: String,
-  slug: String,
-  description: String,
-  price: Number,
-  discountedPrice: Number,
-  images: [{ url: String, alt: String }],
-  category: { type: mongoose.Schema.Types.ObjectId, ref: 'Category' },
-  variants: [{
-    size: String,
-    stock: Number,
-    price: Number,
-    sku: String
-  }],
-  colors: [String],
-  stock: Number,
-  isFeatured: { type: Boolean, default: false },
-  isActive: { type: Boolean, default: true },
-  rating: {
-    average: { type: Number, default: 0 },
-    count: { type: Number, default: 0 }
-  }
-}, { timestamps: true });
-
-const Product = mongoose.models.Product || mongoose.model('Product', productSchema);
-
-// Routes
+// Root route
 app.get('/', (req, res) => {
   res.json({ 
     message: 'Rawayti Pehnawa Backend API - WORKING', 
@@ -93,6 +26,7 @@ app.get('/', (req, res) => {
   });
 });
 
+// Health check
 app.get('/api/health', (req, res) => {
   res.json({ 
     status: 'OK', 
@@ -101,127 +35,159 @@ app.get('/api/health', (req, res) => {
   });
 });
 
-// Categories API
-app.get('/api/categories', async (req, res) => {
-  try {
-    await connectToDatabase();
-    const categories = await Category.find({ isActive: true }).sort({ createdAt: -1 });
-    
-    res.json({
-      success: true,
-      data: {
-        categories: categories
-      }
-    });
-  } catch (error) {
-    console.error('Categories error:', error);
-    res.status(500).json({
-      success: false,
-      message: 'Failed to fetch categories',
-      error: error.message
-    });
-  }
+// Categories API - Simple mock data
+app.get('/api/categories', (req, res) => {
+  res.json({
+    success: true,
+    data: {
+      categories: [
+        { 
+          _id: '1', 
+          name: 'Men', 
+          slug: 'men',
+          image: 'https://images.unsplash.com/photo-1516257984-b1b4d707412e?w=300',
+          description: 'Men\'s Fashion Collection',
+          parentCategory: null,
+          isActive: true
+        },
+        { 
+          _id: '2', 
+          name: 'Women', 
+          slug: 'women',
+          image: 'https://images.unsplash.com/photo-1483985988355-763728e1935b?w=300',
+          description: 'Women\'s Fashion Collection',
+          parentCategory: null,
+          isActive: true
+        },
+        { 
+          _id: '3', 
+          name: 'Kids', 
+          slug: 'kids',
+          image: 'https://images.unsplash.com/photo-1503944583220-79d8926ad5e2?w=300',
+          description: 'Kids Fashion Collection',
+          parentCategory: null,
+          isActive: true
+        }
+      ]
+    }
+  });
 });
 
 // Featured Products API
-app.get('/api/products/featured', async (req, res) => {
-  try {
-    await connectToDatabase();
-    const products = await Product.find({ isFeatured: true, isActive: true })
-      .populate('category')
-      .limit(8)
-      .sort({ createdAt: -1 });
-    
-    res.json({
-      success: true,
-      data: {
-        products: products
-      }
-    });
-  } catch (error) {
-    console.error('Featured products error:', error);
-    res.status(500).json({
-      success: false,
-      message: 'Failed to fetch featured products',
-      error: error.message
-    });
-  }
+app.get('/api/products/featured', (req, res) => {
+  res.json({
+    success: true,
+    data: {
+      products: [
+        { 
+          _id: '1', 
+          name: 'Premium Cotton Shirt', 
+          price: 2500,
+          discountedPrice: 2200,
+          images: [{ url: 'https://images.unsplash.com/photo-1521572163474-6864f9cf17ab?w=400', alt: 'Premium Cotton Shirt' }],
+          category: { _id: '1', name: 'Men', slug: 'men' },
+          featured: true,
+          inStock: true,
+          slug: 'premium-cotton-shirt',
+          description: 'High quality premium cotton shirt for men',
+          rating: { average: 4.5, count: 25 },
+          variants: [{ size: 'M', stock: 10, price: 2500, sku: 'shirt-m' }],
+          colors: ['Blue', 'White'],
+          stock: 10
+        },
+        { 
+          _id: '2', 
+          name: 'Designer Kurti', 
+          price: 1800,
+          discountedPrice: 1600,
+          images: [{ url: 'https://images.unsplash.com/photo-1594633312681-425c7b97ccd1?w=400', alt: 'Designer Kurti' }],
+          category: { _id: '2', name: 'Women', slug: 'women' },
+          featured: true,
+          inStock: true,
+          slug: 'designer-kurti',
+          description: 'Beautiful designer kurti for women',
+          rating: { average: 4.8, count: 42 },
+          variants: [{ size: 'L', stock: 15, price: 1800, sku: 'kurti-l' }],
+          colors: ['Pink', 'Red'],
+          stock: 15
+        }
+      ]
+    }
+  });
 });
 
 // All Products API
-app.get('/api/products', async (req, res) => {
-  try {
-    await connectToDatabase();
-    const page = parseInt(req.query.page) || 1;
-    const limit = parseInt(req.query.limit) || 12;
-    const skip = (page - 1) * limit;
-    
-    const products = await Product.find({ isActive: true })
-      .populate('category')
-      .skip(skip)
-      .limit(limit)
-      .sort({ createdAt: -1 });
-    
-    const total = await Product.countDocuments({ isActive: true });
-    
-    res.json({
-      success: true,
-      data: {
-        products: products,
-        pagination: {
-          page: page,
-          limit: limit,
-          total: total,
-          totalPages: Math.ceil(total / limit)
-        }
+app.get('/api/products', (req, res) => {
+  res.json({
+    success: true,
+    data: {
+      products: [
+        { _id: '1', name: 'Premium Cotton Shirt', price: 2500, image: 'https://images.unsplash.com/photo-1521572163474-6864f9cf17ab?w=400', rating: { average: 4.5, count: 25 } },
+        { _id: '2', name: 'Designer Kurti', price: 1800, image: 'https://images.unsplash.com/photo-1594633312681-425c7b97ccd1?w=400', rating: { average: 4.8, count: 42 } }
+      ],
+      pagination: { 
+        page: 1, 
+        totalPages: 1, 
+        total: 2,
+        limit: 10
       }
-    });
-  } catch (error) {
-    console.error('Products error:', error);
-    res.status(500).json({
-      success: false,
-      message: 'Failed to fetch products',
-      error: error.message
-    });
-  }
+    }
+  });
 });
 
 // Single Product API
-app.get('/api/products/:id', async (req, res) => {
-  try {
-    await connectToDatabase();
-    const product = await Product.findById(req.params.id).populate('category');
-    
-    if (!product) {
-      return res.status(404).json({
-        success: false,
-        message: 'Product not found'
-      });
-    }
-    
-    res.json({
-      success: true,
-      data: {
-        product: product
+app.get('/api/products/:id', (req, res) => {
+  res.json({
+    success: true,
+    data: {
+      product: {
+        _id: req.params.id,
+        name: 'Premium Cotton Shirt',
+        slug: 'premium-cotton-shirt',
+        description: 'High quality premium cotton shirt for men with excellent fabric and comfortable fit.',
+        shortDescription: 'Premium quality cotton shirt with modern design',
+        category: { _id: '1', name: 'Men', slug: 'men' },
+        brand: 'Rawayti',
+        images: [
+          { url: 'https://images.unsplash.com/photo-1521572163474-6864f9cf17ab?w=400', alt: 'Premium Cotton Shirt' }
+        ],
+        variants: [
+          { size: 'M', stock: 10, price: 2500, sku: 'shirt-m' }
+        ],
+        colors: ['Blue', 'White'],
+        price: 2500,
+        discountedPrice: 2200,
+        rating: { average: 4.5, count: 25 },
+        features: ['100% Cotton', 'Machine Washable'],
+        materials: ['Cotton'],
+        stock: 10
       }
-    });
-  } catch (error) {
-    console.error('Single product error:', error);
-    res.status(500).json({
-      success: false,
-      message: 'Failed to fetch product',
-      error: error.message
-    });
-  }
+    }
+  });
+});
+
+// Cart API
+app.get('/api/cart', (req, res) => {
+  res.json({
+    success: true,
+    data: {
+      cart: {
+        _id: 'cart1',
+        items: [],
+        totalItems: 0,
+        totalAmount: 0,
+        count: 0
+      }
+    }
+  });
 });
 
 // Error handler
 app.use((error, req, res, next) => {
-  console.error('Unhandled error:', error);
+  console.error('Error:', error);
   res.status(500).json({
     success: false,
-    message: 'Internal server error',
-    error: process.env.NODE_ENV === 'development' ? error.message : 'Something went wrong'
+    message: 'Internal server error'
   });
 });
 
@@ -229,15 +195,7 @@ app.use((error, req, res, next) => {
 app.use('*', (req, res) => {
   res.status(404).json({ 
     success: false,
-    message: 'Route not found',
-    availableRoutes: [
-      '/',
-      '/api/health',
-      '/api/categories',
-      '/api/products/featured',
-      '/api/products',
-      '/api/products/:id'
-    ]
+    message: 'Route not found'
   });
 });
 
