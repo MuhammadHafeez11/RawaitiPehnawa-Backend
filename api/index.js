@@ -285,6 +285,105 @@ app.get('/api/products/:id', (req, res) => {
   });
 });
 
+// Category products API
+app.get('/api/category/:slug', (req, res) => {
+  const categorySlug = req.params.slug;
+  res.json({
+    success: true,
+    data: {
+      category: { _id: '1', name: 'Men', slug: categorySlug },
+      products: [
+        { _id: '1', name: 'Premium Cotton Shirt', price: 2500, image: 'https://images.unsplash.com/photo-1521572163474-6864f9cf17ab?w=400', rating: { average: 4.5, count: 25 } }
+      ],
+      pagination: { page: 1, totalPages: 1, total: 1 }
+    }
+  });
+});
+
+// Collection API
+app.get('/api/collection/:slug', (req, res) => {
+  const collectionSlug = req.params.slug;
+  res.json({
+    success: true,
+    data: {
+      collection: { _id: '1', name: 'New Arrivals', slug: collectionSlug },
+      products: [
+        { _id: '1', name: 'Premium Cotton Shirt', price: 2500, image: 'https://images.unsplash.com/photo-1521572163474-6864f9cf17ab?w=400', rating: { average: 4.5, count: 25 } }
+      ],
+      pagination: { page: 1, totalPages: 1, total: 1 }
+    }
+  });
+});
+
+// Auth endpoints
+app.post('/api/auth/login', (req, res) => {
+  res.json({
+    success: true,
+    data: {
+      user: { _id: '1', firstName: 'Admin', lastName: 'User', email: 'admin@test.com', role: 'admin' },
+      accessToken: 'mock-token-123'
+    }
+  });
+});
+
+app.post('/api/auth/register', (req, res) => {
+  res.json({
+    success: true,
+    data: {
+      user: { _id: '2', firstName: 'New', lastName: 'User', email: 'user@test.com', role: 'user' },
+      accessToken: 'mock-token-456'
+    }
+  });
+});
+
+app.get('/api/auth/me', (req, res) => {
+  res.json({
+    success: true,
+    data: {
+      user: { _id: '1', firstName: 'Admin', lastName: 'User', email: 'admin@test.com', role: 'admin' }
+    }
+  });
+});
+
+app.post('/api/auth/logout', (req, res) => {
+  res.json({ success: true, message: 'Logged out successfully' });
+});
+
+// Orders API
+app.get('/api/orders', (req, res) => {
+  res.json({
+    success: true,
+    data: {
+      orders: [],
+      pagination: { page: 1, totalPages: 1, total: 0 }
+    }
+  });
+});
+
+app.post('/api/orders', (req, res) => {
+  res.json({
+    success: true,
+    data: {
+      order: {
+        _id: 'order-123',
+        orderNumber: 'ORD-001',
+        status: 'pending',
+        total: 2500
+      }
+    }
+  });
+});
+
+// Start server for local development
+const PORT = process.env.PORT || 5000;
+if (require.main === module) {
+  app.listen(PORT, () => {
+    console.log(`🚀 Server running on port ${PORT}`);
+    console.log(`📍 Local: http://localhost:${PORT}`);
+    console.log(`✅ Backend is working!`);
+  });
+}
+
 // Catch all other routes
 app.use('*', (req, res) => {
   res.status(404).json({ 
@@ -295,7 +394,12 @@ app.use('*', (req, res) => {
       '/api/health',
       '/api/categories',
       '/api/products/featured',
-      '/api/products'
+      '/api/products',
+      '/api/products/:id',
+      '/api/category/:slug',
+      '/api/collection/:slug',
+      '/api/auth/login',
+      '/api/cart'
     ]
   });
 });
