@@ -61,6 +61,7 @@ app.use(cors({
     'https://rawaiti-pehnawa-frontend.vercel.app',
     'https://ecommerce-frontend-psi-six.vercel.app',
     'http://localhost:3000',
+    'http://localhost:5000',
     'http://localhost:3001'
   ],
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS', 'PATCH'],
