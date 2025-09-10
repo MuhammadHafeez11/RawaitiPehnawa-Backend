@@ -1,7 +1,70 @@
 const express = require('express');
 const cors = require('cors');
+const mongoose = require('mongoose');
+require('dotenv').config();
 
 const app = express();
+
+// MongoDB connection
+let cachedConnection = null;
+
+async function connectToDatabase() {
+  if (cachedConnection) {
+    return cachedConnection;
+  }
+  
+  try {
+    const connection = await mongoose.connect(process.env.MONGO_URI || 'mongodb+srv://muhammadhafeezmern:n1lYJ2siO3s9JWs6@cluster0.bwg5k.mongodb.net/RawaitiPehnawa?retryWrites=true&w=majority&appName=Cluster0', {
+      useNewUrlParser: true,
+      useUnifiedTopology: true,
+      serverSelectionTimeoutMS: 5000,
+      maxPoolSize: 10
+    });
+    cachedConnection = connection;
+    console.log('✅ MongoDB connected');
+    return connection;
+  } catch (error) {
+    console.error('❌ MongoDB connection error:', error);
+    throw error;
+  }
+}
+
+// Schemas
+const categorySchema = new mongoose.Schema({
+  name: String,
+  slug: String,
+  description: String,
+  image: String,
+  isActive: { type: Boolean, default: true },
+  parentCategory: { type: mongoose.Schema.Types.ObjectId, ref: 'Category', default: null }
+}, { timestamps: true });
+
+const productSchema = new mongoose.Schema({
+  name: String,
+  slug: String,
+  description: String,
+  price: Number,
+  discountedPrice: Number,
+  images: [{ url: String, alt: String }],
+  category: { type: mongoose.Schema.Types.ObjectId, ref: 'Category' },
+  variants: [{
+    size: String,
+    stock: Number,
+    price: Number,
+    sku: String
+  }],
+  colors: [String],
+  stock: Number,
+  isFeatured: { type: Boolean, default: false },
+  isActive: { type: Boolean, default: true },
+  rating: {
+    average: { type: Number, default: 0 },
+    count: { type: Number, default: 0 }
+  }
+}, { timestamps: true });
+
+const Category = mongoose.models.Category || mongoose.model('Category', categorySchema);
+const Product = mongoose.models.Product || mongoose.model('Product', productSchema);
 
 // Simple CORS
 app.use(cors({
@@ -35,104 +98,121 @@ app.get('/api/health', (req, res) => {
   });
 });
 
-// Categories API - Simple mock data
-app.get('/api/categories', (req, res) => {
-  res.json({
-    success: true,
-    data: {
-      categories: [
-        { 
-          _id: '1', 
-          name: 'Men', 
-          slug: 'men',
-          image: 'https://images.unsplash.com/photo-1516257984-b1b4d707412e?w=300',
-          description: 'Men\'s Fashion Collection',
-          parentCategory: null,
-          isActive: true
-        },
-        { 
-          _id: '2', 
-          name: 'Women', 
-          slug: 'women',
-          image: 'https://images.unsplash.com/photo-1483985988355-763728e1935b?w=300',
-          description: 'Women\'s Fashion Collection',
-          parentCategory: null,
-          isActive: true
-        },
-        { 
-          _id: '3', 
-          name: 'Kids', 
-          slug: 'kids',
-          image: 'https://images.unsplash.com/photo-1503944583220-79d8926ad5e2?w=300',
-          description: 'Kids Fashion Collection',
-          parentCategory: null,
-          isActive: true
-        }
-      ]
-    }
-  });
-});
-
-// Featured Products API
-app.get('/api/products/featured', (req, res) => {
-  res.json({
-    success: true,
-    data: {
-      products: [
-        { 
-          _id: '1', 
-          name: 'Premium Cotton Shirt', 
-          price: 2500,
-          discountedPrice: 2200,
-          images: [{ url: 'https://images.unsplash.com/photo-1521572163474-6864f9cf17ab?w=400', alt: 'Premium Cotton Shirt' }],
-          category: { _id: '1', name: 'Men', slug: 'men' },
-          featured: true,
-          inStock: true,
-          slug: 'premium-cotton-shirt',
-          description: 'High quality premium cotton shirt for men',
-          rating: { average: 4.5, count: 25 },
-          variants: [{ size: 'M', stock: 10, price: 2500, sku: 'shirt-m' }],
-          colors: ['Blue', 'White'],
-          stock: 10
-        },
-        { 
-          _id: '2', 
-          name: 'Designer Kurti', 
-          price: 1800,
-          discountedPrice: 1600,
-          images: [{ url: 'https://images.unsplash.com/photo-1594633312681-425c7b97ccd1?w=400', alt: 'Designer Kurti' }],
-          category: { _id: '2', name: 'Women', slug: 'women' },
-          featured: true,
-          inStock: true,
-          slug: 'designer-kurti',
-          description: 'Beautiful designer kurti for women',
-          rating: { average: 4.8, count: 42 },
-          variants: [{ size: 'L', stock: 15, price: 1800, sku: 'kurti-l' }],
-          colors: ['Pink', 'Red'],
-          stock: 15
-        }
-      ]
-    }
-  });
-});
-
-// All Products API
-app.get('/api/products', (req, res) => {
-  res.json({
-    success: true,
-    data: {
-      products: [
-        { _id: '1', name: 'Premium Cotton Shirt', price: 2500, image: 'https://images.unsplash.com/photo-1521572163474-6864f9cf17ab?w=400', rating: { average: 4.5, count: 25 } },
-        { _id: '2', name: 'Designer Kurti', price: 1800, image: 'https://images.unsplash.com/photo-1594633312681-425c7b97ccd1?w=400', rating: { average: 4.8, count: 42 } }
-      ],
-      pagination: { 
-        page: 1, 
-        totalPages: 1, 
-        total: 2,
-        limit: 10
+// Categories API - Real database
+app.get('/api/categories', async (req, res) => {
+  try {
+    await connectToDatabase();
+    const categories = await Category.find({ isActive: true, parentCategory: null }).sort({ createdAt: -1 });
+    
+    res.json({
+      success: true,
+      data: {
+        categories: categories
       }
-    }
-  });
+    });
+  } catch (error) {
+    console.error('Categories error:', error);
+    res.json({
+      success: true,
+      data: {
+        categories: [
+          { 
+            _id: '1', 
+            name: 'Men', 
+            slug: 'men',
+            image: 'https://images.unsplash.com/photo-1516257984-b1b4d707412e?w=300',
+            description: 'Men\'s Fashion Collection',
+            parentCategory: null,
+            isActive: true
+          },
+          { 
+            _id: '2', 
+            name: 'Women', 
+            slug: 'women',
+            image: 'https://images.unsplash.com/photo-1483985988355-763728e1935b?w=300',
+            description: 'Women\'s Fashion Collection',
+            parentCategory: null,
+            isActive: true
+          }
+        ]
+      }
+    });
+  }
+});
+
+// Featured Products API - Real database
+app.get('/api/products/featured', async (req, res) => {
+  try {
+    await connectToDatabase();
+    const products = await Product.find({ isFeatured: true, isActive: true })
+      .populate('category')
+      .limit(8)
+      .sort({ createdAt: -1 });
+    
+    res.json({
+      success: true,
+      data: {
+        products: products
+      }
+    });
+  } catch (error) {
+    console.error('Featured products error:', error);
+    res.json({
+      success: true,
+      data: {
+        products: [
+          { 
+            _id: '1', 
+            name: 'Premium Cotton Shirt', 
+            price: 2500,
+            images: [{ url: 'https://images.unsplash.com/photo-1521572163474-6864f9cf17ab?w=400', alt: 'Premium Cotton Shirt' }],
+            category: { _id: '1', name: 'Men', slug: 'men' },
+            rating: { average: 4.5, count: 25 }
+          }
+        ]
+      }
+    });
+  }
+});
+
+// All Products API - Real database
+app.get('/api/products', async (req, res) => {
+  try {
+    await connectToDatabase();
+    const page = parseInt(req.query.page) || 1;
+    const limit = parseInt(req.query.limit) || 12;
+    const skip = (page - 1) * limit;
+    
+    const products = await Product.find({ isActive: true })
+      .populate('category')
+      .skip(skip)
+      .limit(limit)
+      .sort({ createdAt: -1 });
+    
+    const total = await Product.countDocuments({ isActive: true });
+    
+    res.json({
+      success: true,
+      data: {
+        products: products,
+        pagination: {
+          page: page,
+          limit: limit,
+          total: total,
+          totalPages: Math.ceil(total / limit)
+        }
+      }
+    });
+  } catch (error) {
+    console.error('Products error:', error);
+    res.json({
+      success: true,
+      data: {
+        products: [],
+        pagination: { page: 1, totalPages: 1, total: 0, limit: 10 }
+      }
+    });
+  }
 });
 
 // Single Product API
