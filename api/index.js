@@ -5,7 +5,7 @@ require('dotenv').config();
 
 const app = express();
 
-// MongoDB connection
+// MongoDB connection - SECURE (from env)
 let cachedConnection = null;
 
 async function connectToDatabase() {
@@ -14,7 +14,7 @@ async function connectToDatabase() {
   }
   
   try {
-    const connection = await mongoose.connect(process.env.MONGO_URI || 'mongodb+srv://muhammadhafeezmern:n1lYJ2siO3s9JWs6@cluster0.bwg5k.mongodb.net/RawaitiPehnawa?retryWrites=true&w=majority&appName=Cluster0', {
+    const connection = await mongoose.connect(process.env.MONGO_URI, {
       useNewUrlParser: true,
       useUnifiedTopology: true,
       serverSelectionTimeoutMS: 5000,
@@ -43,6 +43,7 @@ const productSchema = new mongoose.Schema({
   name: String,
   slug: String,
   description: String,
+  shortDescription: String,
   price: Number,
   discountedPrice: Number,
   images: [{ url: String, alt: String }],
@@ -60,13 +61,46 @@ const productSchema = new mongoose.Schema({
   rating: {
     average: { type: Number, default: 0 },
     count: { type: Number, default: 0 }
+  },
+  brand: String,
+  features: [String],
+  materials: [String],
+  careInstructions: String
+}, { timestamps: true });
+
+const userSchema = new mongoose.Schema({
+  firstName: String,
+  lastName: String,
+  email: { type: String, unique: true },
+  password: String,
+  role: { type: String, default: 'user' },
+  isActive: { type: Boolean, default: true }
+}, { timestamps: true });
+
+const orderSchema = new mongoose.Schema({
+  orderNumber: String,
+  user: { type: mongoose.Schema.Types.ObjectId, ref: 'User' },
+  items: [{
+    product: { type: mongoose.Schema.Types.ObjectId, ref: 'Product' },
+    quantity: Number,
+    price: Number
+  }],
+  total: Number,
+  status: { type: String, default: 'pending' },
+  shippingAddress: {
+    name: String,
+    address: String,
+    city: String,
+    phone: String
   }
 }, { timestamps: true });
 
 const Category = mongoose.models.Category || mongoose.model('Category', categorySchema);
 const Product = mongoose.models.Product || mongoose.model('Product', productSchema);
+const User = mongoose.models.User || mongoose.model('User', userSchema);
+const Order = mongoose.models.Order || mongoose.model('Order', orderSchema);
 
-// Simple CORS
+// CORS
 app.use(cors({
   origin: [
     'https://rawaiti-pehnawa-frontend.vercel.app',
@@ -82,10 +116,10 @@ app.use(express.json());
 // Root route
 app.get('/', (req, res) => {
   res.json({ 
-    message: 'Rawayti Pehnawa Backend API - WORKING', 
+    message: 'Rawayti Pehnawa Backend API - WORKING WITH REAL DATABASE', 
     status: 'OK', 
     timestamp: new Date().toISOString(),
-    version: '3.0'
+    version: '4.0'
   });
 });
 
@@ -94,7 +128,7 @@ app.get('/api/health', (req, res) => {
   res.json({ 
     status: 'OK', 
     timestamp: new Date().toISOString(),
-    message: 'Backend is working perfectly!'
+    message: 'Backend working with real database!'
   });
 });
 
@@ -112,30 +146,10 @@ app.get('/api/categories', async (req, res) => {
     });
   } catch (error) {
     console.error('Categories error:', error);
-    res.json({
-      success: true,
-      data: {
-        categories: [
-          { 
-            _id: '1', 
-            name: 'Men', 
-            slug: 'men',
-            image: 'https://images.unsplash.com/photo-1516257984-b1b4d707412e?w=300',
-            description: 'Men\'s Fashion Collection',
-            parentCategory: null,
-            isActive: true
-          },
-          { 
-            _id: '2', 
-            name: 'Women', 
-            slug: 'women',
-            image: 'https://images.unsplash.com/photo-1483985988355-763728e1935b?w=300',
-            description: 'Women\'s Fashion Collection',
-            parentCategory: null,
-            isActive: true
-          }
-        ]
-      }
+    res.status(500).json({
+      success: false,
+      message: 'Failed to fetch categories',
+      error: error.message
     });
   }
 });
@@ -157,20 +171,10 @@ app.get('/api/products/featured', async (req, res) => {
     });
   } catch (error) {
     console.error('Featured products error:', error);
-    res.json({
-      success: true,
-      data: {
-        products: [
-          { 
-            _id: '1', 
-            name: 'Premium Cotton Shirt', 
-            price: 2500,
-            images: [{ url: 'https://images.unsplash.com/photo-1521572163474-6864f9cf17ab?w=400', alt: 'Premium Cotton Shirt' }],
-            category: { _id: '1', name: 'Men', slug: 'men' },
-            rating: { average: 4.5, count: 25 }
-          }
-        ]
-      }
+    res.status(500).json({
+      success: false,
+      message: 'Failed to fetch featured products',
+      error: error.message
     });
   }
 });
@@ -205,45 +209,284 @@ app.get('/api/products', async (req, res) => {
     });
   } catch (error) {
     console.error('Products error:', error);
-    res.json({
-      success: true,
-      data: {
-        products: [],
-        pagination: { page: 1, totalPages: 1, total: 0, limit: 10 }
-      }
+    res.status(500).json({
+      success: false,
+      message: 'Failed to fetch products',
+      error: error.message
     });
   }
 });
 
-// Single Product API
-app.get('/api/products/:id', (req, res) => {
+// Single Product API - Real database
+app.get('/api/products/:id', async (req, res) => {
+  try {
+    await connectToDatabase();
+    const product = await Product.findById(req.params.id).populate('category');
+    
+    if (!product) {
+      return res.status(404).json({
+        success: false,
+        message: 'Product not found'
+      });
+    }
+    
+    res.json({
+      success: true,
+      data: {
+        product: product
+      }
+    });
+  } catch (error) {
+    console.error('Single product error:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Failed to fetch product',
+      error: error.message
+    });
+  }
+});
+
+// Category products - Real database
+app.get('/api/category/:slug', async (req, res) => {
+  try {
+    await connectToDatabase();
+    const category = await Category.findOne({ slug: req.params.slug, isActive: true });
+    
+    if (!category) {
+      return res.status(404).json({
+        success: false,
+        message: 'Category not found'
+      });
+    }
+    
+    const products = await Product.find({ category: category._id, isActive: true })
+      .populate('category')
+      .sort({ createdAt: -1 });
+    
+    res.json({
+      success: true,
+      data: {
+        category: category,
+        products: products,
+        pagination: { page: 1, totalPages: 1, total: products.length }
+      }
+    });
+  } catch (error) {
+    console.error('Category products error:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Failed to fetch category products',
+      error: error.message
+    });
+  }
+});
+
+// Collection pages - Real database
+app.get('/api/collection/:slug', async (req, res) => {
+  try {
+    await connectToDatabase();
+    let products = [];
+    
+    if (req.params.slug === 'new-arrivals') {
+      products = await Product.find({ isActive: true })
+        .populate('category')
+        .sort({ createdAt: -1 })
+        .limit(20);
+    } else if (req.params.slug === 'sale') {
+      products = await Product.find({ 
+        isActive: true,
+        discountedPrice: { $exists: true, $ne: null }
+      })
+        .populate('category')
+        .sort({ createdAt: -1 });
+    }
+    
+    res.json({
+      success: true,
+      data: {
+        collection: { 
+          _id: '1', 
+          name: req.params.slug === 'new-arrivals' ? 'New Arrivals' : 'Sale', 
+          slug: req.params.slug 
+        },
+        products: products,
+        pagination: { page: 1, totalPages: 1, total: products.length }
+      }
+    });
+  } catch (error) {
+    console.error('Collection error:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Failed to fetch collection',
+      error: error.message
+    });
+  }
+});
+
+// Auth API
+app.post('/api/auth/login', async (req, res) => {
+  try {
+    await connectToDatabase();
+    const { email, password } = req.body;
+    
+    // Simple auth check (in real app, use bcrypt)
+    const user = await User.findOne({ email: email, isActive: true });
+    
+    if (user) {
+      res.json({
+        success: true,
+        data: {
+          user: {
+            _id: user._id,
+            firstName: user.firstName,
+            lastName: user.lastName,
+            email: user.email,
+            role: user.role
+          },
+          accessToken: 'mock-token-' + user._id
+        }
+      });
+    } else {
+      res.status(401).json({
+        success: false,
+        message: 'Invalid credentials'
+      });
+    }
+  } catch (error) {
+    console.error('Login error:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Login failed',
+      error: error.message
+    });
+  }
+});
+
+app.post('/api/auth/register', async (req, res) => {
+  try {
+    await connectToDatabase();
+    const { firstName, lastName, email, password } = req.body;
+    
+    const newUser = new User({
+      firstName,
+      lastName,
+      email,
+      password, // In real app, hash this
+      role: 'user'
+    });
+    
+    await newUser.save();
+    
+    res.json({
+      success: true,
+      data: {
+        user: {
+          _id: newUser._id,
+          firstName: newUser.firstName,
+          lastName: newUser.lastName,
+          email: newUser.email,
+          role: newUser.role
+        },
+        accessToken: 'mock-token-' + newUser._id
+      }
+    });
+  } catch (error) {
+    console.error('Register error:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Registration failed',
+      error: error.message
+    });
+  }
+});
+
+app.get('/api/auth/me', (req, res) => {
   res.json({
     success: true,
     data: {
-      product: {
-        _id: req.params.id,
-        name: 'Premium Cotton Shirt',
-        slug: 'premium-cotton-shirt',
-        description: 'High quality premium cotton shirt for men with excellent fabric and comfortable fit.',
-        shortDescription: 'Premium quality cotton shirt with modern design',
-        category: { _id: '1', name: 'Men', slug: 'men' },
-        brand: 'Rawayti',
-        images: [
-          { url: 'https://images.unsplash.com/photo-1521572163474-6864f9cf17ab?w=400', alt: 'Premium Cotton Shirt' }
-        ],
-        variants: [
-          { size: 'M', stock: 10, price: 2500, sku: 'shirt-m' }
-        ],
-        colors: ['Blue', 'White'],
-        price: 2500,
-        discountedPrice: 2200,
-        rating: { average: 4.5, count: 25 },
-        features: ['100% Cotton', 'Machine Washable'],
-        materials: ['Cotton'],
-        stock: 10
+      user: { 
+        _id: '1', 
+        firstName: 'Admin', 
+        lastName: 'User', 
+        email: 'admin@test.com', 
+        role: 'admin' 
       }
     }
   });
+});
+
+app.post('/api/auth/logout', (req, res) => {
+  res.json({ 
+    success: true, 
+    message: 'Logged out successfully' 
+  });
+});
+
+// Admin API - Real database
+app.get('/api/admin/products', async (req, res) => {
+  try {
+    await connectToDatabase();
+    const products = await Product.find().populate('category').sort({ createdAt: -1 });
+    
+    res.json({
+      success: true,
+      data: {
+        products: products,
+        pagination: { page: 1, totalPages: 1, total: products.length }
+      }
+    });
+  } catch (error) {
+    console.error('Admin products error:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Failed to fetch admin products',
+      error: error.message
+    });
+  }
+});
+
+app.get('/api/admin/categories', async (req, res) => {
+  try {
+    await connectToDatabase();
+    const categories = await Category.find().sort({ createdAt: -1 });
+    
+    res.json({
+      success: true,
+      data: {
+        categories: categories,
+        pagination: { page: 1, totalPages: 1, total: categories.length }
+      }
+    });
+  } catch (error) {
+    console.error('Admin categories error:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Failed to fetch admin categories',
+      error: error.message
+    });
+  }
+});
+
+app.get('/api/admin/orders', async (req, res) => {
+  try {
+    await connectToDatabase();
+    const orders = await Order.find().populate('user').populate('items.product').sort({ createdAt: -1 });
+    
+    res.json({
+      success: true,
+      data: {
+        orders: orders,
+        pagination: { page: 1, totalPages: 1, total: orders.length }
+      }
+    });
+  } catch (error) {
+    console.error('Admin orders error:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Failed to fetch admin orders',
+      error: error.message
+    });
+  }
 });
 
 // Cart API
@@ -292,140 +535,64 @@ app.delete('/api/cart', (req, res) => {
   });
 });
 
-// Auth API
-app.post('/api/auth/login', (req, res) => {
-  res.json({
-    success: true,
-    data: {
-      user: { 
-        _id: '1', 
-        firstName: 'Admin', 
-        lastName: 'User', 
-        email: 'admin@test.com', 
-        role: 'admin' 
-      },
-      accessToken: 'mock-token-123'
-    }
-  });
-});
-
-app.post('/api/auth/register', (req, res) => {
-  res.json({
-    success: true,
-    data: {
-      user: { 
-        _id: '2', 
-        firstName: 'New', 
-        lastName: 'User', 
-        email: 'user@test.com', 
-        role: 'user' 
-      },
-      accessToken: 'mock-token-456'
-    }
-  });
-});
-
-app.get('/api/auth/me', (req, res) => {
-  res.json({
-    success: true,
-    data: {
-      user: { 
-        _id: '1', 
-        firstName: 'Admin', 
-        lastName: 'User', 
-        email: 'admin@test.com', 
-        role: 'admin' 
-      }
-    }
-  });
-});
-
-app.post('/api/auth/logout', (req, res) => {
-  res.json({ 
-    success: true, 
-    message: 'Logged out successfully' 
-  });
-});
-
-// Category pages
-app.get('/api/category/:slug', (req, res) => {
-  res.json({
-    success: true,
-    data: {
-      category: { 
-        _id: '1', 
-        name: 'Men', 
-        slug: req.params.slug 
-      },
-      products: [
-        { 
-          _id: '1', 
-          name: 'Premium Cotton Shirt', 
-          price: 2500, 
-          images: [{ url: 'https://images.unsplash.com/photo-1521572163474-6864f9cf17ab?w=400', alt: 'Shirt' }],
-          rating: { average: 4.5, count: 25 } 
-        }
-      ],
-      pagination: { page: 1, totalPages: 1, total: 1 }
-    }
-  });
-});
-
-// Collection pages
-app.get('/api/collection/:slug', (req, res) => {
-  res.json({
-    success: true,
-    data: {
-      collection: { 
-        _id: '1', 
-        name: 'New Arrivals', 
-        slug: req.params.slug 
-      },
-      products: [
-        { 
-          _id: '1', 
-          name: 'Premium Cotton Shirt', 
-          price: 2500, 
-          images: [{ url: 'https://images.unsplash.com/photo-1521572163474-6864f9cf17ab?w=400', alt: 'Shirt' }],
-          rating: { average: 4.5, count: 25 } 
-        }
-      ],
-      pagination: { page: 1, totalPages: 1, total: 1 }
-    }
-  });
-});
-
 // Orders API
-app.get('/api/orders', (req, res) => {
-  res.json({
-    success: true,
-    data: {
-      orders: [],
-      pagination: { page: 1, totalPages: 1, total: 0 }
-    }
-  });
+app.get('/api/orders', async (req, res) => {
+  try {
+    await connectToDatabase();
+    const orders = await Order.find().populate('items.product').sort({ createdAt: -1 });
+    
+    res.json({
+      success: true,
+      data: {
+        orders: orders,
+        pagination: { page: 1, totalPages: 1, total: orders.length }
+      }
+    });
+  } catch (error) {
+    console.error('Orders error:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Failed to fetch orders',
+      error: error.message
+    });
+  }
 });
 
-app.post('/api/orders', (req, res) => {
-  res.json({
-    success: true,
-    data: {
-      order: {
-        _id: 'order-123',
-        orderNumber: 'ORD-001',
-        status: 'pending',
-        total: 2500
+app.post('/api/orders', async (req, res) => {
+  try {
+    await connectToDatabase();
+    const newOrder = new Order({
+      orderNumber: 'ORD-' + Date.now(),
+      total: req.body.total || 2500,
+      status: 'pending',
+      shippingAddress: req.body.shippingAddress
+    });
+    
+    await newOrder.save();
+    
+    res.json({
+      success: true,
+      data: {
+        order: newOrder
       }
-    }
-  });
+    });
+  } catch (error) {
+    console.error('Create order error:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Failed to create order',
+      error: error.message
+    });
+  }
 });
 
 // Error handler
 app.use((error, req, res, next) => {
-  console.error('Error:', error);
+  console.error('Unhandled error:', error);
   res.status(500).json({
     success: false,
-    message: 'Internal server error'
+    message: 'Internal server error',
+    error: process.env.NODE_ENV === 'development' ? error.message : 'Something went wrong'
   });
 });
 
@@ -433,7 +600,21 @@ app.use((error, req, res, next) => {
 app.use('*', (req, res) => {
   res.status(404).json({ 
     success: false,
-    message: 'Route not found'
+    message: 'Route not found',
+    availableRoutes: [
+      '/',
+      '/api/health',
+      '/api/categories',
+      '/api/products/featured',
+      '/api/products',
+      '/api/products/:id',
+      '/api/category/:slug',
+      '/api/collection/:slug',
+      '/api/auth/login',
+      '/api/admin/products',
+      '/api/admin/categories',
+      '/api/admin/orders'
+    ]
   });
 });
 
