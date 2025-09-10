@@ -1,5 +1,5 @@
-import mongoose from 'mongoose';
-import bcrypt from 'bcryptjs';
+const mongoose = require('mongoose');
+const bcrypt = require('bcryptjs');
 
 const userSchema = new mongoose.Schema({
   firstName: {
@@ -20,7 +20,7 @@ const userSchema = new mongoose.Schema({
     unique: true,
     lowercase: true,
     trim: true,
-    match: [/^\w+([.-]?\w+)*@\w+([.-]?\w+)*(\.\w{2,3})+$/, 'Please enter a valid email']
+    match: [/^\w+([\.-]?\w+)*@\w+([\.-]?\w+)*(\.\w{2,3})+$/, 'Please enter a valid email']
   },
   password: {
     type: String,
@@ -94,4 +94,4 @@ userSchema.set('toJSON', {
   }
 });
 
-export default mongoose.model('User', userSchema);
+module.exports = mongoose.model('User', userSchema);
