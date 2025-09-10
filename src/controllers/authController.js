@@ -1,11 +1,11 @@
-import User from '../models/User.js';
-import { generateAccessToken, generateRefreshToken, verifyRefreshToken } from '../middleware/auth.js';
+const User = require('../models/User.js');
+const { generateAccessToken, generateRefreshToken, verifyRefreshToken } = require('../middleware/auth.js');
 
 /**
  * Register new user
  * @route POST /api/auth/register
  */
-export const register = async (req, res, next) => {
+const register = async (req, res, next) => {
   try {
     const { firstName, lastName, email, password } = req.body;
 
@@ -65,7 +65,7 @@ export const register = async (req, res, next) => {
  * Login user
  * @route POST /api/auth/login
  */
-export const login = async (req, res, next) => {
+const login = async (req, res, next) => {
   try {
     const { email, password } = req.body;
 
@@ -118,7 +118,7 @@ export const login = async (req, res, next) => {
  * Refresh access token
  * @route POST /api/auth/refresh
  */
-export const refreshToken = async (req, res, next) => {
+const refreshToken = async (req, res, next) => {
   try {
     const { refreshToken } = req.cookies;
 
@@ -166,7 +166,7 @@ export const refreshToken = async (req, res, next) => {
  * Logout user
  * @route POST /api/auth/logout
  */
-export const logout = async (req, res, next) => {
+const logout = async (req, res, next) => {
   try {
     const { refreshToken } = req.cookies;
 
@@ -202,7 +202,7 @@ export const logout = async (req, res, next) => {
  * Get current user profile
  * @route GET /api/auth/me
  */
-export const getMe = async (req, res, next) => {
+const getMe = async (req, res, next) => {
   try {
     res.json({
       success: true,
@@ -213,4 +213,12 @@ export const getMe = async (req, res, next) => {
   } catch (error) {
     next(error);
   }
+};
+
+module.exports = {
+  register,
+  login,
+  refreshToken,
+  logout,
+  getMe
 };

@@ -1,4 +1,4 @@
-import mongoose from 'mongoose';
+const mongoose = require('mongoose');
 
 const categorySchema = new mongoose.Schema({
   name: {
@@ -60,4 +60,4 @@ categorySchema.virtual('subcategories', {
 // Ensure virtual fields are serialized
 categorySchema.set('toJSON', { virtuals: true });
 
-export default mongoose.model('Category', categorySchema);
+module.exports = mongoose.model('Category', categorySchema);

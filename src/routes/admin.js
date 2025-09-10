@@ -1,9 +1,9 @@
-import express from 'express';
-import Product from '../models/Product.js';
-import Category from '../models/Category.js';
-import GuestOrder from '../models/GuestOrder.js';
-import User from '../models/User.js';
-import { adminAuth } from '../middleware/auth.js';
+const express = require('express');
+const Product = require('../models/Product.js');
+const Category = require('../models/Category.js');
+const GuestOrder = require('../models/GuestOrder.js');
+const User = require('../models/User.js');
+const { adminAuth } = require('../middleware/auth.js');
 
 const router = express.Router();
 
@@ -395,4 +395,4 @@ router.put('/settings/:section', adminAuth, async (req, res) => {
   }
 });
 
-export default router;
+module.exports = router;

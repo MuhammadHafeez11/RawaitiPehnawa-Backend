@@ -1,12 +1,12 @@
-import Product from '../models/Product.js';
-import CategoryNew from '../models/CategoryNew.js';
-import Collection from '../models/Collection.js';
+const Product = require('../models/Product.js');
+const CategoryNew = require('../models/CategoryNew.js');
+const Collection = require('../models/Collection.js');
 
 /**
  * Get all products with filtering and pagination
  * @route GET /api/products
  */
-export const getProducts = async (req, res, next) => {
+const getProducts = async (req, res, next) => {
   try {
     const { page = 1, limit = 12, category, search, targetGender, stitchType, pieceCount, season, minPrice, maxPrice, sort = '-createdAt' } = req.query;
     
@@ -75,7 +75,7 @@ export const getProducts = async (req, res, next) => {
  * Get single product by ID or slug
  * @route GET /api/products/:id
  */
-export const getProduct = async (req, res, next) => {
+const getProduct = async (req, res, next) => {
   try {
     const { id } = req.params;
     
@@ -124,7 +124,7 @@ export const getProduct = async (req, res, next) => {
  * Create new product (Admin only)
  * @route POST /api/products
  */
-export const createProduct = async (req, res, next) => {
+const createProduct = async (req, res, next) => {
   try {
     const productData = req.body;
     
@@ -146,7 +146,7 @@ export const createProduct = async (req, res, next) => {
  * Update product (Admin only)
  * @route PUT /api/products/:id
  */
-export const updateProduct = async (req, res, next) => {
+const updateProduct = async (req, res, next) => {
   try {
     const { id } = req.params;
     const updateData = req.body;
@@ -179,7 +179,7 @@ export const updateProduct = async (req, res, next) => {
  * Delete product (Admin only)
  * @route DELETE /api/products/:id
  */
-export const deleteProduct = async (req, res, next) => {
+const deleteProduct = async (req, res, next) => {
   try {
     const { id } = req.params;
 
@@ -205,7 +205,7 @@ export const deleteProduct = async (req, res, next) => {
  * Get featured products
  * @route GET /api/products/featured
  */
-export const getFeaturedProducts = async (req, res, next) => {
+const getFeaturedProducts = async (req, res, next) => {
   try {
     const { limit = 8 } = req.query;
 
@@ -226,4 +226,13 @@ export const getFeaturedProducts = async (req, res, next) => {
   } catch (error) {
     next(error);
   }
+};
+
+module.exports = {
+  getProducts,
+  getProduct,
+  createProduct,
+  updateProduct,
+  deleteProduct,
+  getFeaturedProducts
 };

@@ -1,10 +1,10 @@
-import jwt from 'jsonwebtoken';
-import User from '../models/User.js';
+const jwt = require('jsonwebtoken');
+const User = require('../models/User.js');
 
 /**
  * Verify JWT access token middleware
  */
-export const authenticate = async (req, res, next) => {
+const authenticate = async (req, res, next) => {
   try {
     const authHeader = req.headers.authorization;
     
@@ -38,7 +38,7 @@ export const authenticate = async (req, res, next) => {
 /**
  * Check if user has admin role
  */
-export const requireAdmin = (req, res, next) => {
+const requireAdmin = (req, res, next) => {
   if (req.user && req.user.role === 'admin') {
     next();
   } else {
@@ -49,7 +49,7 @@ export const requireAdmin = (req, res, next) => {
 /**
  * Combined auth and admin check middleware
  */
-export const adminAuth = async (req, res, next) => {
+const adminAuth = async (req, res, next) => {
   try {
     await authenticate(req, res, () => {
       requireAdmin(req, res, next);
@@ -59,13 +59,10 @@ export const adminAuth = async (req, res, next) => {
   }
 };
 
-// Legacy exports for compatibility
-export const auth = authenticate;
-
 /**
  * Optional authentication - doesn't fail if no token
  */
-export const optionalAuth = async (req, res, next) => {
+const optionalAuth = async (req, res, next) => {
   try {
     const authHeader = req.headers.authorization;
     
@@ -91,7 +88,7 @@ export const optionalAuth = async (req, res, next) => {
  * @param {string} userId - User ID
  * @returns {string} JWT token
  */
-export const generateAccessToken = (userId) => {
+const generateAccessToken = (userId) => {
   return jwt.sign(
     { userId },
     process.env.JWT_SECRET,
@@ -104,7 +101,7 @@ export const generateAccessToken = (userId) => {
  * @param {string} userId - User ID
  * @returns {string} JWT refresh token
  */
-export const generateRefreshToken = (userId) => {
+const generateRefreshToken = (userId) => {
   return jwt.sign(
     { userId },
     process.env.REFRESH_TOKEN_SECRET,
@@ -117,6 +114,17 @@ export const generateRefreshToken = (userId) => {
  * @param {string} token - Refresh token
  * @returns {Object} Decoded token
  */
-export const verifyRefreshToken = (token) => {
+const verifyRefreshToken = (token) => {
   return jwt.verify(token, process.env.REFRESH_TOKEN_SECRET);
+};
+
+module.exports = {
+  authenticate,
+  requireAdmin,
+  adminAuth,
+  auth: authenticate, // Legacy export
+  optionalAuth,
+  generateAccessToken,
+  generateRefreshToken,
+  verifyRefreshToken
 };

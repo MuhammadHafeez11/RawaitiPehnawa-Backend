@@ -1,4 +1,4 @@
-import mongoose from 'mongoose';
+const mongoose = require('mongoose');
 
 const variantSchema = new mongoose.Schema({
   size: {
@@ -244,4 +244,4 @@ productSchema.index({ 'rating.average': -1 });
 // Ensure virtual fields are serialized
 productSchema.set('toJSON', { virtuals: true });
 
-export default mongoose.model('Product', productSchema);
+module.exports = mongoose.model('Product', productSchema);
