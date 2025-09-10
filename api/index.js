@@ -182,6 +182,164 @@ app.get('/api/cart', (req, res) => {
   });
 });
 
+app.post('/api/cart/items', (req, res) => {
+  res.json({
+    success: true,
+    data: {
+      cart: {
+        _id: 'cart1',
+        items: [{ _id: 'item1', quantity: 1 }],
+        totalItems: 1,
+        totalAmount: 2500,
+        count: 1
+      }
+    }
+  });
+});
+
+app.delete('/api/cart', (req, res) => {
+  res.json({
+    success: true,
+    data: {
+      cart: {
+        _id: 'cart1',
+        items: [],
+        totalItems: 0,
+        totalAmount: 0,
+        count: 0
+      }
+    }
+  });
+});
+
+// Auth API
+app.post('/api/auth/login', (req, res) => {
+  res.json({
+    success: true,
+    data: {
+      user: { 
+        _id: '1', 
+        firstName: 'Admin', 
+        lastName: 'User', 
+        email: 'admin@test.com', 
+        role: 'admin' 
+      },
+      accessToken: 'mock-token-123'
+    }
+  });
+});
+
+app.post('/api/auth/register', (req, res) => {
+  res.json({
+    success: true,
+    data: {
+      user: { 
+        _id: '2', 
+        firstName: 'New', 
+        lastName: 'User', 
+        email: 'user@test.com', 
+        role: 'user' 
+      },
+      accessToken: 'mock-token-456'
+    }
+  });
+});
+
+app.get('/api/auth/me', (req, res) => {
+  res.json({
+    success: true,
+    data: {
+      user: { 
+        _id: '1', 
+        firstName: 'Admin', 
+        lastName: 'User', 
+        email: 'admin@test.com', 
+        role: 'admin' 
+      }
+    }
+  });
+});
+
+app.post('/api/auth/logout', (req, res) => {
+  res.json({ 
+    success: true, 
+    message: 'Logged out successfully' 
+  });
+});
+
+// Category pages
+app.get('/api/category/:slug', (req, res) => {
+  res.json({
+    success: true,
+    data: {
+      category: { 
+        _id: '1', 
+        name: 'Men', 
+        slug: req.params.slug 
+      },
+      products: [
+        { 
+          _id: '1', 
+          name: 'Premium Cotton Shirt', 
+          price: 2500, 
+          images: [{ url: 'https://images.unsplash.com/photo-1521572163474-6864f9cf17ab?w=400', alt: 'Shirt' }],
+          rating: { average: 4.5, count: 25 } 
+        }
+      ],
+      pagination: { page: 1, totalPages: 1, total: 1 }
+    }
+  });
+});
+
+// Collection pages
+app.get('/api/collection/:slug', (req, res) => {
+  res.json({
+    success: true,
+    data: {
+      collection: { 
+        _id: '1', 
+        name: 'New Arrivals', 
+        slug: req.params.slug 
+      },
+      products: [
+        { 
+          _id: '1', 
+          name: 'Premium Cotton Shirt', 
+          price: 2500, 
+          images: [{ url: 'https://images.unsplash.com/photo-1521572163474-6864f9cf17ab?w=400', alt: 'Shirt' }],
+          rating: { average: 4.5, count: 25 } 
+        }
+      ],
+      pagination: { page: 1, totalPages: 1, total: 1 }
+    }
+  });
+});
+
+// Orders API
+app.get('/api/orders', (req, res) => {
+  res.json({
+    success: true,
+    data: {
+      orders: [],
+      pagination: { page: 1, totalPages: 1, total: 0 }
+    }
+  });
+});
+
+app.post('/api/orders', (req, res) => {
+  res.json({
+    success: true,
+    data: {
+      order: {
+        _id: 'order-123',
+        orderNumber: 'ORD-001',
+        status: 'pending',
+        total: 2500
+      }
+    }
+  });
+});
+
 // Error handler
 app.use((error, req, res, next) => {
   console.error('Error:', error);
