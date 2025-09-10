@@ -330,6 +330,60 @@ router.delete('/categories/:id', adminAuth, async (req, res) => {
   }
 });
 
+// Orders Management
+router.get('/orders', adminAuth, async (req, res) => {
+  try {
+    const orders = await GuestOrder.find()
+      .populate('items.productId', 'name')
+      .sort({ createdAt: -1 })
+      .limit(50);
+    
+    res.json({
+      success: true,
+      data: {
+        orders: orders,
+        pagination: { page: 1, totalPages: 1, total: orders.length }
+      }
+    });
+  } catch (error) {
+    res.status(500).json({ success: false, message: error.message });
+  }
+});
+
+router.get('/orders/:id', adminAuth, async (req, res) => {
+  try {
+    const order = await GuestOrder.findById(req.params.id)
+      .populate('items.productId');
+    
+    if (!order) {
+      return res.status(404).json({ success: false, message: 'Order not found' });
+    }
+    
+    res.json({ success: true, data: { order } });
+  } catch (error) {
+    res.status(500).json({ success: false, message: error.message });
+  }
+});
+
+router.put('/orders/:id/status', adminAuth, async (req, res) => {
+  try {
+    const { status } = req.body;
+    const order = await GuestOrder.findByIdAndUpdate(
+      req.params.id,
+      { status },
+      { new: true }
+    );
+    
+    if (!order) {
+      return res.status(404).json({ success: false, message: 'Order not found' });
+    }
+    
+    res.json({ success: true, data: { order } });
+  } catch (error) {
+    res.status(500).json({ success: false, message: error.message });
+  }
+});
+
 // Settings Management
 router.get('/settings', adminAuth, async (req, res) => {
   try {
