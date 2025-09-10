@@ -1,12 +1,11 @@
-import express from 'express';
-import cors from 'cors';
-import helmet from 'helmet';
-import cookieParser from 'cookie-parser';
-import rateLimit from 'express-rate-limit';
-import dotenv from 'dotenv';
-import connectDB from './config/database.js';
-import errorHandler from './middleware/errorHandler.js';
-// Removed custom CORS middleware
+const express = require('express');
+const cors = require('cors');
+const helmet = require('helmet');
+const cookieParser = require('cookie-parser');
+const rateLimit = require('express-rate-limit');
+const dotenv = require('dotenv');
+const connectDB = require('./config/database.js');
+const errorHandler = require('./middleware/errorHandler.js');
 
 // Load environment variables first
 dotenv.config();
@@ -25,15 +24,15 @@ if (process.env.NODE_ENV === 'production') {
 }
 
 // Routes
-import authRoutes from './routes/auth.js';
-import userRoutes from './routes/users.js';
-import productRoutes from './routes/products.js';
-import categoryRoutes from './routes/categories.js';
-import cartRoutes from './routes/cart.js';
-import orderRoutes from './routes/orders.js';
-import guestOrderRoutes from './routes/guestOrders.js';
-import adminRoutes from './routes/admin.js';
-import uploadRoutes from './routes/upload.js';
+const authRoutes = require('./routes/auth.js');
+const userRoutes = require('./routes/users.js');
+const productRoutes = require('./routes/products.js');
+const categoryRoutes = require('./routes/categories.js');
+const cartRoutes = require('./routes/cart.js');
+const orderRoutes = require('./routes/orders.js');
+const guestOrderRoutes = require('./routes/guestOrders.js');
+const adminRoutes = require('./routes/admin.js');
+const uploadRoutes = require('./routes/upload.js');
 
 const app = express();
 const PORT = process.env.PORT || 5000;
@@ -144,5 +143,4 @@ if (process.env.NODE_ENV !== 'production') {
 }
 
 // Export app for Vercel serverless
-export { app };
-export default app;
+module.exports = app;
